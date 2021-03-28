@@ -18,6 +18,8 @@ TimerID timer, timer1, timer2;
 
 bool game = false;
 int blank, mixCount;
+int endTime = 0;
+
 
 int indexToX(int i){
     return 210 + 206 * ( i % 5 );
@@ -83,7 +85,7 @@ void change(ObjectID object){
 void game_start(){
     blank = rand()%25;
     hideObject(game_board[blank]);
-    mixCount = 500;
+    mixCount = 4;
     setTimer(timer, 0.1f);
     startTimer(timer);
     }
@@ -107,7 +109,12 @@ void mouseCallback(ObjectID object, int x, int y, MouseAction action){
             game = false;
             showObject(start);
             showObject(game_board[blank]);
-            showMessage("Completed!!");
+            stopTimer(timer2);
+            setTimer(timer1, 0);
+            char buf[100];
+            sprintf(buf, "Completed!! 해결까지 %d초 걸렸습니다!", endTime);
+            showMessage(buf);
+            endTime = 0;
             
         }
     }else if(object == start)
@@ -133,22 +140,27 @@ void shuffle(){
 
 }*/
 
-/*void countCallback(TimerID timer){
-    setTimer(timer2, 1);
-    startTimer(timer2);
-    increaseTimer(timer1, 1);
-}*/
 
-void timerCallback(TimerID timer){
-    mixCount--;
-    if(mixCount>0){
-        change(game_board[random_move()]);
-        setTimer(timer, 0.01f);
-        startTimer(timer);
-    }else{
-        game = true;
-        hideObject(start);
+void timerCallback(TimerID timerF){
+    
+    if (timerF == timer){
+        mixCount--;
+        if(mixCount>0){
+            change(game_board[random_move()]);
+            setTimer(timer, 0.01f);
+            startTimer(timer);
+        }else{
+            game = true;
+            hideObject(start);
+            startTimer(timer2);
+        }
+    }else if (timerF == timer2){
+        setTimer(timer2, 1);
+        increaseTimer(timer1, 1);
+        endTime++;
+        startTimer(timer2);
     }
+
 }
 SceneID game_init(){
     
@@ -172,6 +184,9 @@ SceneID game_init(){
     //hideObject(game_board[blank]);
     
     timer = createTimer(0.1f);
+    timer1 = createTimer(0);
+    timer2 = createTimer(1);
+    showTimer(timer1);
     
     return scene;
     
@@ -183,11 +198,11 @@ int main() {
     srand((int)time(NULL));
     setMouseCallback(mouseCallback);
     setTimerCallback(timerCallback);
-    //setTimerCallback(countCallback);
+
     setGameOption(GameOption::GAME_OPTION_ROOM_TITLE, false);
     setGameOption(GameOption::GAME_OPTION_INVENTORY_BUTTON, false);
     setGameOption(GameOption::GAME_OPTION_INVENTORY_BUTTON, false);
-    //showTimer(timer1);
+    
     startGame(game_init());
     
 }
